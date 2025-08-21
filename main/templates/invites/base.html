@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Invitation System{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .nav-link {
+            color: white !important;
+            border-radius: 8px;
+            margin: 2px 0;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        .stats-card {
+            border-left: 4px solid #667eea;
+        }
+        .table th {
+            border-top: none;
+            background-color: #f8f9fa;
+        }
+        .badge {
+            font-size: 0.75em;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #667eea !important;
+        }
+        .content-wrapper {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated and user.staffprofile %}
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar p-3">
+                <div class="text-center text-white mb-4">
+                    <h4><i class="fas fa-paper-plane me-2"></i>Invite System</h4>
+                    <small>Welcome, {{ user.get_full_name|default:user.username }}</small>
+                </div>
+                    <ul class="nav nav-pills flex-column">                     
+                        <li class="nav-item">                         
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">                             
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard                         
+                            </a>                     
+                        </li>                     
+                        <li class="nav-item">                         
+                            <a class="nav-link {% if request.resolver_match.url_name == 'create_invite' %}active{% endif %}" href="{% url 'create_invite' %}">                             
+                                <i class="fas fa-plus-circle me-2"></i>Create Invite                         
+                            </a>                     
+                        </li>                     
+                        <li class="nav-item">                         
+                            <a class="nav-link {% if request.resolver_match.url_name == 'invite_list' %}active{% endif %}" href="{% url 'invite_list' %}">                             
+                                <i class="fas fa-list me-2"></i>My Invites                         
+                            </a>                     
+                        </li>                     
+                        <li class="nav-item">                         
+                            <a class="nav-link {% if request.resolver_match.url_name == 'registrations_list' %}active{% endif %}" href="{% url 'registrations_list' %}">                             
+                                <i class="fas fa-users me-2"></i>Registrations                         
+                            </a>                     
+                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'usage_logs' %}active{% endif %}" href="{% url 'usage_logs' %}">
+                            <i class="fas fa-chart-line me-2"></i>Usage Logs
+                        </a>
+                    </li>
+                    <li class="nav-item mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.2)">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog me-2"></i>Admin Panel
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 content-wrapper">
+                <div class="p-4">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    {% else %}
+    <!-- Public layout for registration -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-paper-plane me-2"></i>Registration System
+            </a>
+        </div>
+    </nav>
+    
+
+    {% endif %}
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,211 @@
+
+<!-- templates/main/manage_invites.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Invitations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-link me-2"></i>Manage Invitation Links</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createInviteModal">
+                        <i class="fas fa-plus me-2"></i>Create New Invite
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Token</th>
+                                        <th>Created By</th>
+                                        <th>Created</th>
+                                        <th>Expires</th>
+                                        <th>Uses</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invite in invites %}
+                                    <tr>
+                                        <td>
+                                            <code>{{ invite.token|slice:":8" }}...</code>
+                                        </td>
+                                        <td>{{ invite.created_by }}</td>
+                                        <td>{{ invite.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>{{ invite.expires_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ invite.current_uses }}/{{ invite.max_uses }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if invite.is_usable %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% elif invite.is_expired %}
+                                                <span class="badge bg-warning">Expired</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Used Up</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary copy-link" 
+                                                    data-token="{{ invite.token }}">
+                                                <i class="fas fa-copy"></i> Copy Link
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            No invitation links created yet.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Invite Modal -->
+    <div class="modal fade" id="createInviteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Invitation Link</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createInviteForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ create_form.created_by.label_tag }}
+                            {{ create_form.created_by }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ create_form.days_valid.label_tag }}
+                                    {{ create_form.days_valid }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ create_form.max_uses.label_tag }}
+                                    {{ create_form.max_uses }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ create_form.description.label_tag }}
+                            {{ create_form.description }}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createInviteBtn">Create Invite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invitation Link Created</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Your invitation link has been created successfully!
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Invitation Link:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="generatedLink" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copyGeneratedLink">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Share this link with people you want to invite to register.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Create invite functionality
+        document.getElementById('createInviteBtn').addEventListener('click', function() {
+            const form = document.getElementById('createInviteForm');
+            const formData = new FormData(form);
+            
+            fetch('{% url "create_invite" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('createInviteModal')).hide();
+                    document.getElementById('generatedLink').value = data.invite_url;
+                    new bootstrap.Modal(document.getElementById('successModal')).show();
+                    location.reload(); // Refresh the page to show new invite
+                } else {
+                    alert('Error creating invite: ' + JSON.stringify(data.errors));
+                }
+            });
+        });
+
+        // Copy link functionality
+        document.querySelectorAll('.copy-link').forEach(button => {
+            button.addEventListener('click', function() {
+                const token = this.dataset.token;
+                const link = `${window.location.origin}/register/i/${token}/`;
+                navigator.clipboard.writeText(link).then(() => {
+                    this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-copy"></i> Copy Link';
+                    }, 2000);
+                });
+            });
+        });
+
+        // Copy generated link
+        document.getElementById('copyGeneratedLink').addEventListener('click', function() {
+            const link = document.getElementById('generatedLink');
+            link.select();
+            navigator.clipboard.writeText(link.value);
+            this.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-copy"></i>';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

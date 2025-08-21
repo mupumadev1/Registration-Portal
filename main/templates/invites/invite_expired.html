@@ -1,0 +1,72 @@
+{% extends 'invites/base.html' %}
+
+{% block title %}Invitation Expired{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle fa-5x text-warning"></i>
+                    </div>
+                    <h2 class="card-title text-warning mb-3">Invitation No Longer Valid</h2>
+                    <p class="card-text lead mb-4">
+                        Unfortunately, this invitation link is no longer available for registration.
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">This could be because:</h6>
+                        <ul class="list-unstyled mb-0">
+                            {% if invite.is_expired %}
+                                <li><i class="fas fa-clock me-2"></i>The invitation has expired (expired on {{ invite.expires_at|date:"M d, Y" }})</li>
+                            {% endif %}
+                            {% if invite.current_uses >= invite.max_uses %}
+                                <li><i class="fas fa-users me-2"></i>The maximum number of registrations has been reached</li>
+                            {% endif %}
+                            {% if not invite.is_active %}
+                                <li><i class="fas fa-ban me-2"></i>The invitation has been deactivated</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">
+                            If you believe this is an error, please contact the person who sent you this invitation.
+                        </p>
+                        <button onclick="window.close()" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Invitation Details -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-info-circle me-2"></i>Invitation Details</h6>
+                    <div class="row small text-muted">
+                        <div class="col-6">
+                            <strong>Created by:</strong><br>
+                            {{ invite.created_by }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Created on:</strong><br>
+                            {{ invite.created_at|date:"M d, Y" }}
+                        </div>
+                        <div class="col-6 mt-2">
+                            <strong>Expires:</strong><br>
+                            {{ invite.expires_at|date:"M d, Y" }}
+                        </div>
+                        <div class="col-6 mt-2">
+                            <strong>Usage:</strong><br>
+                            {{ invite.current_uses }}/{{ invite.max_uses }} used
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

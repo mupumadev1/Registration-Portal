@@ -1,0 +1,199 @@
+{% extends 'invites/base.html' %}
+
+{% block title %}Dashboard - Invitation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+    <a href="{% url 'create_invite' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Create New Invite
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-paper-plane fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ stats.total_invites }}</h3>
+                        <small class="text-muted">Total Invites</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ stats.active_invites }}</h3>
+                        <small class="text-muted">Active Invites</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-users fa-2x text-info"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ stats.total_registrations }}</h3>
+                        <small class="text-muted">Registrations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ stats.pending_verifications }}</h3>
+                        <small class="text-muted">Pending Verification</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Daily Limit Info -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Today's Invite Usage</h5>
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar"
+                         style="width: {% widthratio stats.today_invites staff_profile.max_invites_per_day 100 %}%"
+                         aria-valuenow="{{ stats.today_invites }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ staff_profile.max_invites_per_day }}">
+                    </div>
+                </div>
+                <small class="text-muted">
+                    {{ stats.today_invites }} of {{ staff_profile.max_invites_per_day }} invites used today
+                    {% if staff_profile.can_create_more_invites %}
+                        <span class="text-success ms-2"><i class="fas fa-check"></i> Can create more</span>
+                    {% else %}
+                        <span class="text-danger ms-2"><i class="fas fa-times"></i> Daily limit reached</span>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Recent Invites</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_invites %}
+                    <div class="list-group list-group-flush">
+                        {% for invite in recent_invites %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ invite.token|slice:":8" }}...</h6>
+                                    <p class="mb-1 text-muted small">{{ invite.description|truncatechars:50 }}</p>
+                                    <small class="text-muted">{{ invite.created_at|timesince }} ago</small>
+                                </div>
+                                <div class="text-end">
+                                    {% if invite.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                    <div class="small text-muted mt-1">
+                                        {{ invite.current_uses }}/{{ invite.max_uses }} used
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'invite_list' %}" class="btn btn-outline-primary btn-sm">
+                            View All Invites
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No invites created yet</p>
+                        <a href="{% url 'create_invite' %}" class="btn btn-primary">Create Your First Invite</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Recent Registrations</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_registrations %}
+                    <div class="list-group list-group-flush">
+                        {% for registration in recent_registrations %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ registration.full_name }}</h6>
+                                    <p class="mb-1 text-muted small">{{ registration.email }}</p>
+                                    <small class="text-muted">{{ registration.registered_at|timesince }} ago</small>
+                                </div>
+                                <div class="text-end">
+                                    {% if registration.is_verified %}
+                                        <span class="badge bg-success">Verified</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                    <div class="small text-muted mt-1">
+                                        {{ registration.organisation|default:"No org" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'registrations_list' %}" class="btn btn-outline-primary btn-sm">
+                            View All Registrations
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-user-plus fa-3x mb-3"></i>
+                        <p>No registrations yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

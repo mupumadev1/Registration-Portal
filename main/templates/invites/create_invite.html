@@ -1,0 +1,106 @@
+{% extends 'invites/base.html' %}
+
+{% block title %}Create Invite - Invitation System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Invitation Link</h4>
+            </div>
+            <div class="card-body">
+                <!-- Daily Limit Warning -->
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Daily Limit:</strong> 
+                            You have created {{ staff_profile.invites_created_today }} of {{ staff_profile.max_invites_per_day }} invites today.
+                            {% if staff_profile.can_create_more_invites %}
+                                <span class="text-success">You can create {{ staff_profile.max_invites_per_day|add:staff_profile.invites_created_today|add:"-"|add:staff_profile.invites_created_today }} more invites.</span>
+                            {% else %}
+                                <span class="text-danger">You have reached your daily limit.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.max_uses.id_for_label }}" class="form-label">
+                                <i class="fas fa-hashtag me-1"></i>Maximum Uses
+                            </label>
+                            {{ form.max_uses }}
+                            <div class="form-text">How many times can this invite be used?</div>
+                            {% if form.max_uses.errors %}
+                                <div class="text-danger">{{ form.max_uses.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.days_valid.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Valid for (days)
+                            </label>
+                            {{ form.days_valid }}
+                            <div class="form-text">Number of days this invite will remain valid</div>
+                            {% if form.days_valid.errors %}
+                                <div class="text-danger">{{ form.days_valid.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.target_audience.id_for_label }}" class="form-label">
+                            <i class="fas fa-users me-1"></i>Target Audience
+                        </label>
+                        {{ form.target_audience }}
+                        <div class="form-text">Who is this invitation intended for?</div>
+                        {% if form.target_audience.errors %}
+                            <div class="text-danger">{{ form.target_audience.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Description
+                        </label>
+                        {{ form.description }}
+                        <div class="form-text">Brief description or purpose of this invitation</div>
+                        {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary" {% if not staff_profile.can_create_more_invites %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane me-2"></i>Create Invitation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Preview Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-eye me-2"></i>What happens next?</h5>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li class="mb-2">A unique invitation link will be generated</li>
+                    <li class="mb-2">You can share this link with your target audience</li>
+                    <li class="mb-2">Recipients can register using the link</li>
+                    <li class="mb-0">You can track usage and verify registrations</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
