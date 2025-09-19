@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Enter Invitation Code</title>
+    <title>Enter Your Email</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,7 +36,7 @@
                 <div class="invite-card text-center">
                     <i class="fas fa-key invite-icon"></i>
                     <h2 class="mb-3">Welcome!</h2>
-                    <p class="text-muted mb-4">Please enter your invitation code to access the registration form.</p>
+                    <p class="text-muted mb-4">Please enter your email address to continue with your invitation.</p>
                     
                     {% if messages %}
                         {% for message in messages %}
@@ -52,9 +52,9 @@
                         <div class="mb-3">
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text">
-                                    <i class="fas fa-ticket-alt"></i>
+                                    <i class="fas fa-envelope"></i>
                                 </span>
-                                {{ form.invite_code }}
+                                {{ form.email }}
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-lg w-100">

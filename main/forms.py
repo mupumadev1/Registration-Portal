@@ -37,10 +37,10 @@ class InviteLinkForm(forms.ModelForm):
     
     class Meta:
         model = InviteLink
-        fields = ['max_uses', 'description', 'target_audience', 'days_valid']
+        fields = ['max_uses', 'description', 'title', 'days_valid']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'target_audience': forms.TextInput(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
             'max_uses': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
         
@@ -67,14 +67,9 @@ class InviteLinkForm(forms.ModelForm):
 
 
 class InviteEntryForm(forms.Form):
-    invite_code = forms.CharField(
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter your invitation code',
-            'required': True
-        }),
-        label='Invitation Code'
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email address'}),
+        label='Email Address'
     )
 
 class CreateInviteForm(forms.Form):

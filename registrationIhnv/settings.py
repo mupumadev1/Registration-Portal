@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-wjtbh+nd87h2mt#55r^sg!#$4h-_2s2ekzi@ir67_y9q)cv%z$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.100.144','127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -40,6 +40,8 @@ INSTALLED_APPS = [
 
     'main',  # Custom app for registration
 ]
+JWT_ALGORITHM = "HS256"
+JWT_SECRET= '89268690-6d78-45b5-a0d6-2567253f2083'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -131,3 +133,11 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication redirect settings
+# Ensure unauthenticated users are redirected to our custom login page
+LOGIN_URL = 'login'
+# After successful login, send users to the dashboard
+LOGIN_REDIRECT_URL = 'dashboard'
+# After logout, send users back to the login page
+LOGOUT_REDIRECT_URL = 'login'

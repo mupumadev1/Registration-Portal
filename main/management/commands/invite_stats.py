@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db.models import Count, Q
+
+from main import models
 from main.models import InviteLink, RegisteredPerson, StaffProfile
 
 class Command(BaseCommand):

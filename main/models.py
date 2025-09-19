@@ -33,73 +33,59 @@ class StaffProfile(models.Model):
 
 
 class InviteLink(models.Model):
-    """Model to store invitation links with expiry and usage tracking"""
-    
-    # Unique identifier for the invite link
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    
-    # Link metadata
-    created_by = models.CharField(max_length=100, help_text="Display name of person who created this invite")
-    created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
-                                       help_text="User who created this invite")
+    created_by = models.CharField(max_length=100)
+    created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-    
-    # Usage tracking
+
     is_active = models.BooleanField(default=True)
-    max_uses = models.IntegerField(default=1, help_text="Maximum number of times this link can be used")
+    archived = models.BooleanField(default=False)
+    # How many uses allowed in total (and per user as a simple limit)
+    max_uses = models.IntegerField(default=1, help_text="How many times each user can register with this link")
+    # Track how many times this invite has been used
     current_uses = models.IntegerField(default=0)
-    
-    # Optional description and purpose
-    description = models.TextField(blank=True, help_text="Purpose of this invite link")
-    target_audience = models.CharField(max_length=200, blank=True, help_text="Who is this invite for?")
-    
-    # Tracking
+
+    description = models.TextField(blank=True)
+    title = models.CharField(max_length=200, default="Staff workshop")
     last_used_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        permissions = [
-            ("can_manage_all_invites", "Can manage all invitation links"),
-            ("can_view_invite_stats", "Can view invitation statistics"),
-        ]
-    
-    def __str__(self):
-        return f"Invite {str(self.token)[:8]}... - Created by {self.created_by}"
+
+    @property
+    def total_registrations(self):
+        """Total number of successful registrations through this link"""
+        return RegisteredPerson.objects.filter(invite=self).count()
+
+    @property
+    def is_usable(self):
+        """Check if link is still usable"""
+        if not self.is_active or self.is_expired:
+            return False
+        return True
+
+    def can_user_register(self, identifier):
+        """
+        Check if a user (identified by email/phone/IP) can still register
+        identifier can be email, phone number, or IP address
+        """
+        if not self.is_usable:
+            return False
+
+        # Count how many times this identifier has been used with this link
+        user_registrations = UserInviteUsage.objects.filter(
+            invite=self,
+            identifier=identifier
+        ).count()
+
+        # Use max_uses as per-user usage limit for this invite
+        return user_registrations < self.max_uses
     
     @property
     def is_expired(self):
         return timezone.now() > self.expires_at
-    
-    @property
-    def is_usable(self):
-        return (
-            self.is_active and 
-            not self.is_expired and 
-            self.current_uses < self.max_uses
-        )
-    
-    @property
-    def usage_percentage(self):
-        """Get usage as percentage"""
-        if self.max_uses == 0:
-            return 0
-        return (self.current_uses / self.max_uses) * 100
-    
-    def use_invite(self):
-        """Mark invite as used and increment usage count"""
-        if self.is_usable:
-            self.current_uses += 1
-            self.last_used_at = timezone.now()
-            if self.current_uses >= self.max_uses:
-                self.is_active = False
-            self.save()
-            return True
-        return False
-    
+
     @classmethod
-    def create_invite(cls, created_by, created_by_user=None, days_valid=7, max_uses=1, 
-                     description="", target_audience=""):
+    def create_invite(cls, created_by, created_by_user=None, days_valid=7, max_uses=1,
+                      description="", title=""):
         """Create a new invite link"""
         expires_at = timezone.now() + timedelta(days=days_valid)
         return cls.objects.create(
@@ -108,8 +94,42 @@ class InviteLink(models.Model):
             expires_at=expires_at,
             max_uses=max_uses,
             description=description,
-            target_audience=target_audience
+            title=title
         )
+    def use_invite(self):
+        """Mark invite as used. Increment counter, set last_used_at, and deactivate if fully used."""
+        if not self.is_usable:
+            return False
+        self.current_uses += 1
+        self.last_used_at = timezone.now()
+        if self.current_uses >= self.max_uses:
+            self.is_active = False
+        self.save(update_fields=['current_uses', 'last_used_at', 'is_active'])
+        return True
+
+
+class UserInviteUsage(models.Model):
+    """Track individual user usage of invite links"""
+    invite = models.ForeignKey(InviteLink, on_delete=models.CASCADE, related_name='user_usages')
+    identifier = models.CharField(max_length=255, help_text="Email, phone, or IP address")
+    identifier_type = models.CharField(max_length=20, choices=[
+        ('email', 'Email Address'),
+        ('phone', 'Phone Number'),
+        ('ip', 'IP Address'),
+    ])
+
+    registered_person = models.ForeignKey('RegisteredPerson', on_delete=models.CASCADE)
+    used_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['invite', 'registered_person']  # Prevent duplicate entries
+        indexes = [
+            models.Index(fields=['invite', 'identifier']),
+        ]
+
+    def __str__(self):
+        return f"{self.identifier} used invite {self.invite.token} on {self.used_at}"
 
 
 class RegisteredPerson(models.Model):
@@ -123,7 +143,7 @@ class RegisteredPerson(models.Model):
     email = models.EmailField()
     bank = models.CharField(max_length=100, blank=True)
     account_number = models.CharField(max_length=50, blank=True)
-    invite = models.OneToOneField(InviteLink, on_delete=models.SET_NULL, null=True, blank=True)
+    invite = models.ForeignKey(InviteLink, on_delete=models.SET_NULL, null=True, blank=True, related_name='registrations')
 
     registered_at = models.DateTimeField(auto_now_add=True)
 
@@ -131,7 +151,7 @@ class RegisteredPerson(models.Model):
     registration_ip = models.GenericIPAddressField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     verification_notes = models.TextField(blank=True)
-    
+
     class Meta:
         ordering = ['-registered_at']
         permissions = [
@@ -145,6 +165,22 @@ class RegisteredPerson(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        # Create usage tracking entry when person registers
+        if is_new and self.invite:
+            # Track by email (primary identifier)
+            UserInviteUsage.objects.create(
+                invite=self.invite,
+                identifier=self.email,
+                identifier_type='email',
+                registered_person=self
+            )
+
+
 
 
 class InviteUsageLog(models.Model):

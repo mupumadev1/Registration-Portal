@@ -34,20 +34,20 @@ class StaffProfileAdmin(admin.ModelAdmin):
 
 @admin.register(InviteLink)
 class InviteLinkAdmin(admin.ModelAdmin):
-    list_display = ['token_short', 'created_by', 'created_at', 'expires_at', 'current_uses', 'max_uses', 'is_active']
+    list_display = ['token_short', 'created_by', 'created_at', 'expires_at', 'max_uses', 'is_active']
     list_filter = ['is_active', 'created_at', 'expires_at', 'created_by_user']
-    search_fields = ['token', 'created_by', 'description', 'target_audience']
-    readonly_fields = ['token', 'created_at', 'current_uses', 'last_used_at']
+    search_fields = ['token', 'created_by', 'description', 'title']
+    readonly_fields = ['token', 'created_at', 'last_used_at']
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('token', 'created_by', 'created_by_user', 'description', 'target_audience')
+            'fields': ('token', 'created_by', 'created_by_user', 'description', 'title')
         }),
         ('Configuration', {
             'fields': ('expires_at', 'max_uses', 'is_active')
         }),
         ('Usage Statistics', {
-            'fields': ('current_uses', 'last_used_at'),
+            'fields': ( 'last_used_at',),
             'classes': ('collapse',),
         }),
         ('Timestamps', {

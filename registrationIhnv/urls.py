@@ -19,23 +19,22 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 # Root redirect function
-def root_redirect(request):
+"""def root_redirect(request):
     if request.user.is_authenticated:
         try:
             if hasattr(request.user, 'staffprofile'):
-                return redirect('invites:dashboard')
+                return redirect('dashboard')
             else:
                 return redirect('admin:index')
         except:
             return redirect('admin:index')
     else:
-        return redirect('invites:login')
-
+        return redirect('login')
+"""
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', lambda request: redirect('/register/invite-entry/')),
-    path('', root_redirect),  # Use the root redirect function
-    path('register/', include('main.urls')),
+ #   path('', root_redirect),  # Root route redirects appropriately
+    path('', include('main.urls')),
 
 ]

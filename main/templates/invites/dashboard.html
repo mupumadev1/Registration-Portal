@@ -1,11 +1,13 @@
 {% extends 'invites/base.html' %}
 
-{% block title %}Dashboard - Invitation System{% endblock %}
+{% block title %}Dashboard - InviteCentral {% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
-    <a href="{% url 'create_invite' %}" class="btn btn-primary">
+    <h2 class="fw-bold text-primary text-opacity-75">
+        <i class="fas fa-chart-line me-2"></i> Dashboard
+    </h2>
+    <a href="{% url 'create_invite' %}" class="btn btn-gradient">
         <i class="fas fa-plus me-2"></i>Create New Invite
     </a>
 </div>
@@ -14,79 +16,72 @@
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
         <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas fa-paper-plane fa-2x text-primary"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-0">{{ stats.total_invites }}</h3>
-                        <small class="text-muted">Total Invites</small>
-                    </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-box bg-primary bg-opacity-10 text-primary me-3">
+                    <i class="fas fa-paper-plane fa-lg"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ stats.total_invites }}</h3>
+                    <small class="text-muted">Total Invites</small>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3 mb-3">
         <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas fa-check-circle fa-2x text-success"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-0">{{ stats.active_invites }}</h3>
-                        <small class="text-muted">Active Invites</small>
-                    </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-box bg-success bg-opacity-10 text-success me-3">
+                    <i class="fas fa-check-circle fa-lg"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ stats.active_invites }}</h3>
+                    <small class="text-muted">Active Invites</small>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3 mb-3">
         <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas fa-users fa-2x text-info"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-0">{{ stats.total_registrations }}</h3>
-                        <small class="text-muted">Registrations</small>
-                    </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-box bg-info bg-opacity-10 text-info me-3">
+                    <i class="fas fa-users fa-lg"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ stats.total_registrations }}</h3>
+                    <small class="text-muted">Registrations</small>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3 mb-3">
         <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas fa-clock fa-2x text-warning"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-0">{{ stats.pending_verifications }}</h3>
-                        <small class="text-muted">Pending Verification</small>
-                    </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-box bg-warning bg-opacity-10 text-warning me-3">
+                    <i class="fas fa-clock fa-lg"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ stats.pending_verifications }}</h3>
+                    <small class="text-muted">Pending Verification</small>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <!-- Daily Limit Info -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Today's Invite Usage</h5>
-                <div class="progress mb-2">
-                    <div class="progress-bar" role="progressbar"
+                <h5 class="fw-semibold mb-3"><i class="fas fa-calendar-day me-2 text-primary"></i>Today's Invite Usage</h5>
+                <div class="progress rounded-pill mb-2">
+                    <div class="progress-bar bg-primary" role="progressbar"
                          style="width: {% widthratio stats.today_invites staff_profile.max_invites_per_day 100 %}%"
-                         aria-valuenow="{{ stats.today_invites }}" 
-                         aria-valuemin="0" 
+                         aria-valuenow="{{ stats.today_invites }}"
+                         aria-valuemin="0"
                          aria-valuemax="{{ staff_profile.max_invites_per_day }}">
                     </div>
                 </div>
@@ -106,43 +101,43 @@
 <!-- Recent Activity -->
 <div class="row">
     <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Recent Invites</h5>
+        <div class="card h-100">
+            <div class="card-header bg-white border-0 fw-semibold">
+                <i class="fas fa-paper-plane me-2 text-primary"></i>Recent Invites
             </div>
             <div class="card-body">
                 {% if recent_invites %}
                     <div class="list-group list-group-flush">
                         {% for invite in recent_invites %}
-                        <div class="list-group-item border-0 px-0">
+                        <div class="list-group-item border-0 px-0 py-2">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1">{{ invite.token|slice:":8" }}...</h6>
-                                    <p class="mb-1 text-muted small">{{ invite.description|truncatechars:50 }}</p>
+                                    <h6 class="mb-1 fw-semibold">{{ invite.description|truncatechars:50 }}</h6>
+                                    <p class="mb-1 text-muted small font-monospace">{{ invite.link }}</p>
                                     <small class="text-muted">{{ invite.created_at|timesince }} ago</small>
                                 </div>
                                 <div class="text-end">
-                                    {% if invite.is_active %}
+                                    {% if invite.is_usable %}
                                         <span class="badge bg-success">Active</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Inactive</span>
+                                        <button class="badge copy-btn border-0" onclick="copyToClipboard('{{ invite.link|escapejs }}', this)">Copy</button>
+                                     {% elif invite.is_expired %}
+                                       <span class="badge bg-danger">Expired</span>
+                                     {% else %}
+                                       <span class="badge bg-secondary">Inactive</span>
                                     {% endif %}
-                                    <div class="small text-muted mt-1">
-                                        {{ invite.current_uses }}/{{ invite.max_uses }} used
-                                    </div>
                                 </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     <div class="text-center mt-3">
-                        <a href="{% url 'invite_list' %}" class="btn btn-outline-primary btn-sm">
+                        <a href="{% url 'invite_list' %}" class="btn btn-outline-primary btn-sm rounded-pill">
                             View All Invites
                         </a>
                     </div>
                 {% else %}
-                    <div class="text-center text-muted">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
                         <p>No invites created yet</p>
                         <a href="{% url 'create_invite' %}" class="btn btn-primary">Create Your First Invite</a>
                     </div>
@@ -150,20 +145,20 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Recent Registrations</h5>
+        <div class="card h-100">
+            <div class="card-header bg-white border-0 fw-semibold">
+                <i class="fas fa-users me-2 text-primary"></i>Recent Registrations
             </div>
             <div class="card-body">
                 {% if recent_registrations %}
                     <div class="list-group list-group-flush">
                         {% for registration in recent_registrations %}
-                        <div class="list-group-item border-0 px-0">
+                        <div class="list-group-item border-0 px-0 py-2">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1">{{ registration.full_name }}</h6>
+                                    <h6 class="mb-1 fw-semibold">{{ registration.full_name }}</h6>
                                     <p class="mb-1 text-muted small">{{ registration.email }}</p>
                                     <small class="text-muted">{{ registration.registered_at|timesince }} ago</small>
                                 </div>
@@ -182,13 +177,13 @@
                         {% endfor %}
                     </div>
                     <div class="text-center mt-3">
-                        <a href="{% url 'registrations_list' %}" class="btn btn-outline-primary btn-sm">
+                        <a href="{% url 'registrations_list' %}" class="btn btn-outline-primary btn-sm rounded-pill">
                             View All Registrations
                         </a>
                     </div>
                 {% else %}
-                    <div class="text-center text-muted">
-                        <i class="fas fa-user-plus fa-3x mb-3"></i>
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-user-plus fa-3x mb-3 text-secondary"></i>
                         <p>No registrations yet</p>
                     </div>
                 {% endif %}
@@ -196,4 +191,68 @@
         </div>
     </div>
 </div>
+
+<!-- Toast notification -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+    <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-check-circle text-success me-2"></i>
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Invite link copied to clipboard!
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .btn-gradient {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border: none;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 600;
+        color: #fff;
+        transition: background 0.3s ease;
+    }
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #1e40af, #1d4ed8);
+        color: #fff;
+    }
+    .stats-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        transition: transform 0.2s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+    .icon-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        font-size: 1.25rem;
+    }
+    .copy-btn {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+    .copy-btn:hover {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+    }
+    .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+    }
+</style>
 {% endblock %}

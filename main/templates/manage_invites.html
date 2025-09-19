@@ -162,7 +162,7 @@
             const form = document.getElementById('createInviteForm');
             const formData = new FormData(form);
             
-            fetch('{% url "create_invite" %}', {
+            fetch('{% url "create_invite_json" %}', {
                 method: 'POST',
                 body: formData,
                 headers: {

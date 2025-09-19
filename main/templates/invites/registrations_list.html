@@ -4,17 +4,26 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-users me-2"></i>Registrations</h1>
-    <a href="{% url 'export_registrations' %}" class="btn btn-success">
-        <i class="fas fa-download me-2"></i>Export CSV
-    </a>
+    <h2 class="fw-bold text-primary text-opacity-75"><i class="fas fa-users me-2"></i>Registrations</h2>
+    <div class="btn-group">
+
+        <!-- Export filtered PDF -->
+        <a href="{% url 'export_registrations_pdf' %}?filtered=1{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if selected_invite_token %}&invite={{ selected_invite_token }}{% endif %}"
+           class="btn btn-outline-danger" title="Export filtered PDF">
+            <i class="fas fa-file-pdf me-2"></i>PDF (filtered)
+        </a>
+        <!-- Export all PDF -->
+        <a href="{% url 'export_registrations_pdf' %}?all=1" class="btn btn-danger" title="Export all PDF">
+            <i class="fas fa-file-pdf me-2"></i>PDF (all)
+        </a>
+    </div>
 </div>
 
 <!-- Filters and Search -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="verified" class="form-label">Verification Status</label>
                 <select name="verified" id="verified" class="form-select">
                     <option value="">All Status</option>
@@ -22,7 +31,16 @@
                     <option value="no" {% if verified_filter == 'no' %}selected{% endif %}>Pending Verification</option>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <label for="invite" class="form-label">Group (Invite)</label>
+                <select name="invite" id="invite" class="form-select">
+                    <option value="">All Invites</option>
+                    {% for inv in invites %}
+                        <option value="{{ inv.token }}" {% if selected_invite_token and selected_invite_token == inv.token|stringformat:'s' %}selected{% endif %}>{{ inv.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
                 <label for="search" class="form-label">Search</label>
                 <input type="text" name="search" id="search" class="form-control" 
                        placeholder="Search by name, email, or organization..." value="{{ search_query }}">
@@ -38,156 +56,178 @@
 
 <!-- Registrations List -->
 {% if page_obj %}
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Designation</th>
-                            <th>Organization</th>
-                            <th>Registration Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for registration in page_obj %}
-                        <tr>
-                            <td>
-                                <div class="fw-medium">{{ registration.full_name }}</div>
-                                <small class="text-muted">{{ registration.phone_number }}</small>
-                            </td>
-                            <td>
-                                <div>{{ registration.email }}</div>
-                                <small class="text-muted">ID: {{ registration.id_number }}</small>
-                            </td>
-                            <td>{{ registration.designation }}</td>
-                            <td>{{ registration.organisation|default:"Not specified" }}</td>
-                            <td>
-                                <div>{{ registration.registered_at|date:"M d, Y" }}</div>
-                                <small class="text-muted">{{ registration.registered_at|time:"H:i" }}</small>
-                            </td>
-                            <td>
-                                {% if registration.is_verified %}
-                                    <span class="badge bg-success">Verified</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Pending</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#detailsModal{{ registration.id }}"
-                                            title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <form method="post" action="{% url 'verify_registration' pk=registration.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" 
-                                                class="btn btn-outline-{% if registration.is_verified %}warning{% else %}success{% endif %}"
-                                                title="{% if registration.is_verified %}Unverify{% else %}Verify{% endif %}">
-                                            <i class="fas fa-{% if registration.is_verified %}times{% else %}check{% endif %}"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="accordion" id="registrationsAccordion">
+        {% for group in page_obj %}
+        {% with inv=group.invite %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ inv.token }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ inv.token }}" aria-expanded="false" aria-controls="collapse{{ inv.token }}">
+                    <div class="w-100 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">{{ inv.title }}</div>
+                            <small class="text-muted">{{ inv.description }}</small>
+                        </div>
+                        <div class="text-nowrap">
+                            <span class="badge bg-primary me-2">Total: {{ group.total }}</span>
+                            <span class="badge bg-success me-2">Verified: {{ group.verified }}</span>
+                            <span class="badge bg-warning text-dark">Pending: {{ group.pending }}</span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse{{ inv.token }}" class="accordion-collapse collapse" aria-labelledby="heading{{ inv.token }}" data-bs-parent="#registrationsAccordion">
+                <div class="accordion-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Designation(Job Title)</th>
+                                    <th>Organization</th>
+                                    <th>Registration Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registration in group.registrations %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-medium">{{ registration.full_name }}</div>
+                                        <small class="text-muted">{{ registration.phone_number }}</small>
+                                    </td>
+                                    <td>
+                                        <div>{{ registration.email }}</div>
+                                        <small class="text-muted">ID: {{ registration.id_number }}</small>
+                                    </td>
+                                    <td>{{ registration.designation }}</td>
+                                    <td>{{ registration.organisation|default:"Not specified" }}</td>
+                                    <td>
+                                        <div>{{ registration.registered_at|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ registration.registered_at|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if registration.is_verified %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#detailsModal{{ registration.id }}"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <form method="post" action="{% url 'verify_registration' pk=registration.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" 
+                                                        class="btn btn-outline-{% if registration.is_verified %}warning{% else %}success{% endif %}"
+                                                        title="{% if registration.is_verified %}Unverify{% else %}Verify{% endif %}">
+                                                    <i class="fas fa-{% if registration.is_verified %}times{% else %}check{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+        {% endwith %}
+        {% endfor %}
     </div>
 
-    <!-- Detail Modals -->
-    {% for registration in page_obj %}
-    <div class="modal fade" id="detailsModal{{ registration.id }}" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Registration Details - {{ registration.full_name }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Personal Information</h6>
-                            <table class="table table-sm">
-                                <tr><th>Full Name:</th><td>{{ registration.full_name }}</td></tr>
-                                <tr><th>Email:</th><td>{{ registration.email }}</td></tr>
-                                <tr><th>Phone:</th><td>{{ registration.phone_number }}</td></tr>
-                                <tr><th>ID Number:</th><td>{{ registration.id_number }}</td></tr>
-                            </table>
+    <!-- Detail Modals for all visible grouped registrations -->
+    {% for group in page_obj %}
+        {% for registration in group.registrations %}
+        <div class="modal fade" id="detailsModal{{ registration.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Registration Details - {{ registration.full_name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Personal Information</h6>
+                                <table class="table table-sm">
+                                    <tr><th>Full Name:</th><td>{{ registration.full_name }}</td></tr>
+                                    <tr><th>Email:</th><td>{{ registration.email }}</td></tr>
+                                    <tr><th>Phone:</th><td>{{ registration.phone_number }}</td></tr>
+                                    <tr><th>ID Number:</th><td>{{ registration.id_number }}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Professional Information</h6>
+                                <table class="table table-sm">
+                                    <tr><th>Designation:</th><td>{{ registration.designation }}</td></tr>
+                                    <tr><th>Organization:</th><td>{{ registration.organisation|default:"Not specified" }}</td></tr>
+                                </table>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Professional Information</h6>
-                            <table class="table table-sm">
-                                <tr><th>Designation:</th><td>{{ registration.designation }}</td></tr>
-                                <tr><th>Organization:</th><td>{{ registration.organisation|default:"Not specified" }}</td></tr>
-                            </table>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="text-primary">Activities</h6>
+                                <p class="text-muted">{{ registration.activity }}</p>
+                            </div>
+                        </div>
+                        {% if registration.bank or registration.account_number %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="text-primary">Banking Information</h6>
+                                <table class="table table-sm">
+                                    <tr><th>Bank:</th><td>{{ registration.bank|default:"Not provided" }}</td></tr>
+                                    <tr><th>Account:</th><td>{{ registration.account_number|default:"Not provided" }}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Registration Details</h6>
+                                <table class="table table-sm">
+                                    <tr><th>Registered:</th><td>{{ registration.registered_at }}</td></tr>
+                                    <tr><th>IP Address:</th><td>{{ registration.registration_ip|default:"Not recorded" }}</td></tr>
+                                    <tr><th>Invite Token:</th><td><code>{{ registration.invite.token|slice:":8" }}...</code></td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Verification</h6>
+                                <table class="table table-sm">
+                                    <tr><th>Status:</th><td>
+                                        {% if registration.is_verified %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td></tr>
+                                    <tr><th>Notes:</th><td>{{ registration.verification_notes|default:"No notes" }}</td></tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6 class="text-primary">Activities</h6>
-                            <p class="text-muted">{{ registration.activity }}</p>
-                        </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{% url 'verify_registration' pk=registration.id %}" class="me-auto">
+                            {% csrf_token %}
+                            <input type="text" name="notes" placeholder="Verification notes..." class="form-control d-inline-block me-2" style="width: 200px;">
+                            <button type="submit" class="btn btn-{% if registration.is_verified %}warning{% else %}success{% endif %}">
+                                {% if registration.is_verified %}Unverify{% else %}Verify{% endif %}
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
-                    
-                    {% if registration.bank or registration.account_number %}
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6 class="text-primary">Banking Information</h6>
-                            <table class="table table-sm">
-                                <tr><th>Bank:</th><td>{{ registration.bank|default:"Not provided" }}</td></tr>
-                                <tr><th>Account:</th><td>{{ registration.account_number|default:"Not provided" }}</td></tr>
-                            </table>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Registration Details</h6>
-                            <table class="table table-sm">
-                                <tr><th>Registered:</th><td>{{ registration.registered_at }}</td></tr>
-                                <tr><th>IP Address:</th><td>{{ registration.registration_ip|default:"Not recorded" }}</td></tr>
-                                <tr><th>Invite Token:</th><td><code>{{ registration.invite.token|slice:":8" }}...</code></td></tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Verification</h6>
-                            <table class="table table-sm">
-                                <tr><th>Status:</th><td>
-                                    {% if registration.is_verified %}
-                                        <span class="badge bg-success">Verified</span>
-                                    {% else %}
-                                        <span class="badge bg-warning">Pending</span>
-                                    {% endif %}
-                                </td></tr>
-                                <tr><th>Notes:</th><td>{{ registration.verification_notes|default:"No notes" }}</td></tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <form method="post" action="{% url 'verify_registration' pk=registration.id %}" class="me-auto">
-                        {% csrf_token %}
-                        <input type="text" name="notes" placeholder="Verification notes..." class="form-control d-inline-block me-2" style="width: 200px;">
-                        <button type="submit" class="btn btn-{% if registration.is_verified %}warning{% else %}success{% endif %}">
-                            {% if registration.is_verified %}Unverify{% else %}Verify{% endif %}
-                        </button>
-                    </form>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
-    </div>
+        {% endfor %}
     {% endfor %}
 
     <!-- Pagination -->
@@ -196,10 +236,10 @@
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                    <a class="page-link" href="?page=1{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_invite_token %}&invite={{ selected_invite_token }}{% endif %}">First</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_invite_token %}&invite={{ selected_invite_token }}{% endif %}">Previous</a>
                 </li>
             {% endif %}
 
@@ -209,10 +249,10 @@
 
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_invite_token %}&invite={{ selected_invite_token }}{% endif %}">Next</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if verified_filter %}&verified={{ verified_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_invite_token %}&invite={{ selected_invite_token }}{% endif %}">Last</a>
                 </li>
             {% endif %}
         </ul>

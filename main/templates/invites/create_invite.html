@@ -3,12 +3,15 @@
 {% block title %}Create Invite - Invitation System{% endblock %}
 
 {% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary text-opacity-75">
+        <i class="fas fa-calendar-plus me-2"></i> Create Invite
+    </h2>
+    </div>
 <div class="row justify-content-center">
+
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Invitation Link</h4>
-            </div>
             <div class="card-body">
                 <!-- Daily Limit Warning -->
                 <div class="alert alert-info">
@@ -26,7 +29,7 @@
                     </div>
                 </div>
 
-                <form method="post">
+                <form method="post" id="invite-creation">
                     {% csrf_token %}
                     
                     <div class="row">
@@ -54,13 +57,13 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="{{ form.target_audience.id_for_label }}" class="form-label">
-                            <i class="fas fa-users me-1"></i>Target Audience
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="fas fa-users me-1"></i>Title
                         </label>
-                        {{ form.target_audience }}
+                        {{ form.title }}
                         <div class="form-text">Who is this invitation intended for?</div>
-                        {% if form.target_audience.errors %}
-                            <div class="text-danger">{{ form.target_audience.errors.0 }}</div>
+                        {% if form.title.errors %}
+                            <div class="text-danger">{{ form.title.errors.0 }}</div>
                         {% endif %}
                     </div>
                     
@@ -103,4 +106,85 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="successModalLabel">Invitation Created</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Populated dynamically -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Invitation Link:</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="inviteLinkInput" readonly>
+            <button class="btn btn-outline-secondary" type="button" id="copyLinkBtn">Copy</button>
+          </div>
+        </div>
+        <p id="inviteExpires"></p>
+        <p id="inviteRemaining"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("invite-creation");
+    const inviteLinkInput = document.getElementById("inviteLinkInput");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
+    const inviteExpires = document.getElementById("inviteExpires");
+    const inviteRemaining = document.getElementById("inviteRemaining");
+
+    copyLinkBtn.addEventListener("click", async () => {
+        if (!inviteLinkInput.value) return;
+        try {
+            await navigator.clipboard.writeText(inviteLinkInput.value);
+            copyLinkBtn.textContent = "Copied!";
+            setTimeout(() => (copyLinkBtn.textContent = "Copy"), 2000);
+        } catch (err) {
+            console.error("Copy failed:", err);
+            alert("Failed to copy link. Please copy it manually.");
+        }
+    });
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch("{% url 'create_invite_json' %}", {
+                method: "POST",
+                headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Network error");
+            const data = await response.json();
+
+            if (data.success) {
+                inviteLinkInput.value = data.invite_url;
+                inviteExpires.textContent = "Expires at: " + data.expires_at;
+                inviteRemaining.textContent = "Remaining invites today: " + data.remaining_limit;
+
+                const modal = new bootstrap.Modal(document.getElementById("successModal"));
+                modal.show();
+                form.reset();
+            } else {
+                alert(data.error || "Check the form for errors.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred. Please try again.");
+        }
+    });
+});
+</script>
 {% endblock %}

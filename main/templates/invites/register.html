@@ -16,8 +16,8 @@
                     {% if invite.description %}
                         <p class="card-text">{{ invite.description }}</p>
                     {% endif %}
-                    {% if invite.target_audience %}
-                        <p class="text-muted"><strong>For:</strong> {{ invite.target_audience }}</p>
+                    {% if invite.title %}
+                        <p class="text-muted"><strong>For:</strong> {{ invite.title }}</p>
                     {% endif %}
                     <div class="row text-center mt-3">
                         <div class="col-4">
@@ -28,10 +28,7 @@
                             <small class="text-muted">Expires</small>
                             <div class="fw-bold">{{ invite.expires_at|date:"M d, Y" }}</div>
                         </div>
-                        <div class="col-4">
-                            <small class="text-muted">Uses left</small>
-                            <div class="fw-bold">{{ invite.max_uses|add:invite.current_uses|add:"-"|add:invite.current_uses }}</div>
-                        </div>
+
                     </div>
                 </div>
             </div>
