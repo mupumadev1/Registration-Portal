@@ -1,0 +1,228 @@
+{% extends 'invites/base.html' %}
+
+{% block title %}Invite Details - Invitation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <h1 class="mb-0"><i class="fas fa-link me-2"></i>Invite Details</h1>
+        <div>
+            {% if invite.is_usable %}
+                <span class="badge bg-success">Active</span>
+            {% elif invite.is_expired %}
+                <span class="badge bg-danger">Expired</span>
+            {% elif invite.is_active %}
+                <span class="badge bg-secondary">Inactive</span>
+            {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+            {% if invite.archived %}
+                <span class="badge bg-dark ms-1">Archived</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'invite_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+        <button type="button" class="btn btn-outline-primary" onclick="copyToClipboard('{{ link }}')">
+            <i class="fas fa-copy me-2"></i>Copy Link
+        </button>
+        <form method="post" action="{% url 'toggle_invite_status' token=invite.token %}">
+            {% csrf_token %}
+            {% if invite.is_active %}
+            <button type="submit" class="btn btn-outline-warning">
+                <i class="fas fa-pause me-2"></i>Deactivate
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-outline-success">
+                <i class="fas fa-play me-2"></i>Activate
+            </button>
+            {% endif %}
+        </form>
+        <form method="post" action="{% url 'toggle_invite_archive' token=invite.token %}">
+            {% csrf_token %}
+            {% if invite.archived %}
+            <button type="submit" class="btn btn-outline-success">
+                <i class="fas fa-box-open me-2"></i>Unarchive
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-outline-dark">
+                <i class="fas fa-archive me-2"></i>Archive
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Details Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-muted small">Token</div>
+                <code class="text-primary">{{ invite.token }}</code>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small">Title</div>
+                <div class="fw-semibold">{{ invite.title|default:'Not specified' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small">Created By</div>
+                <div class="fw-semibold">{{ invite.created_by_user|default:invite.created_by }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small">Registrations</div>
+                <div class="fw-bold">{{ invite.total_registrations }}</div>
+            </div>
+            <div class="col-12">
+                <div class="text-muted small">Description</div>
+                <div>{{ invite.description|default:'No description provided.' }}</div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-md-4">
+                <div class="text-muted small">Created</div>
+                <div>{{ invite.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small">Expires</div>
+                <div class="{% if invite.is_expired %}text-danger{% endif %}">{{ invite.expires_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small">Last Used</div>
+                <div>{{ invite.last_used_at|date:"M d, Y H:i"|default:'—' }}</div>
+            </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-light border rounded d-flex justify-content-between align-items-center flex-wrap">
+            <div class="me-3">
+                <div class="text-muted small">Shareable Link</div>
+                <code class="d-block">{{ link }}</code>
+            </div>
+            <div class="mt-2 mt-md-0">
+                <button type="button" class="btn btn-outline-primary" onclick="copyToClipboard('{{ link }}')">
+                    <i class="fas fa-copy me-2"></i>Copy Link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Usage Logs -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Recent Usage</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if usage_logs %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP</th>
+                        <th>User Agent</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in usage_logs %}
+                    <tr>
+                        <td><small class="text-muted">{{ log.used_at|date:"M d, Y H:i" }}</small></td>
+                        <td><code>{{ log.ip_address|default:'—' }}</code></td>
+                        <td><small class="text-muted">{{ log.user_agent|truncatechars:60|default:'—' }}</small></td>
+                        <td>
+                            {% if log.successful_registration %}
+                                <span class="badge bg-success">Registered</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Visited</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <i class="fas fa-inbox fa-2x mb-2"></i>
+            <div>No recent usage recorded.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Registrations for this invite -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Registrations</h5>
+        <a href="{% url 'registrations_list' %}?invite={{ invite.token }}" class="btn btn-sm btn-outline-secondary">
+            View All Registrations
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if registrations %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Organisation</th>
+                        <th>Registered</th>
+                        <th>Verified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registrations %}
+                    <tr>
+                        <td>{{ r.full_name }}</td>
+                        <td><code>{{ r.email }}</code></td>
+                        <td>{{ r.organisation|default:'—' }}</td>
+                        <td><small class="text-muted">{{ r.registered_at|date:"M d, Y H:i" }}</small></td>
+                        <td>
+                            {% if r.is_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <i class="fas fa-user-plus fa-2x mb-2"></i>
+            <div>No registrations yet for this invite.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '1050';
+        toast.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check me-2"></i>Invite link copied to clipboard!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+        alert('Failed to copy link. Please copy manually.');
+    });
+}
+</script>
+{% endblock %}

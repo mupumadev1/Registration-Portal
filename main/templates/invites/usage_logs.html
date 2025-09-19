@@ -1,0 +1,135 @@
+{% extends 'invites/base.html' %}
+
+{% block title %}Usage Logs - Invitation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary text-opacity-75"><i class="fas fa-chart-line me-2"></i>Usage Logs</h2>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="success" class="form-label">Registration Outcome</label>
+                <select name="success" id="success" class="form-select">
+                    <option value="">All</option>
+                    <option value="yes" {% if success_filter == 'yes' %}selected{% endif %}>Successful</option>
+                    <option value="no" {% if success_filter == 'no' %}selected{% endif %}>Unsuccessful</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Apply
+                </button>
+            </div>
+            {% if success_filter %}
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{% url 'usage_logs' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-times me-2"></i>Clear
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Logs Table -->
+{% if page_obj and page_obj.object_list %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Invite</th>
+                    <th>Token</th>
+                    <th class="text-nowrap">IP Address</th>
+                    <th>User Agent</th>
+                    <th>Status</th>
+                    <th>Registered Person</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in page_obj %}
+                <tr>
+                    <td>{{ log.used_at|date:"M d, Y" }}</td>
+                    <td>{{ log.used_at|time:"H:i" }}</td>
+                    <td>{{ log.invite.title|default:"(Untitled Invite)" }}</td>
+                    <td><code>{{ log.invite.token|slice:":8" }}...</code></td>
+                    <td>{{ log.ip_address|default:"-" }}</td>
+                    <td>
+                        {% with ua=log.user_agent %}
+                            {% if ua %}
+                                {% if ua|length > 60 %}{{ ua|slice:":60" }}...{% else %}{{ ua }}{% endif %}
+                            {% else %}
+                                <span class="text-muted">Not recorded</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if log.successful_registration %}
+                            <span class="badge bg-success">Success</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Attempt</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.registered_person %}
+                            {{ log.registered_person.full_name }}<br>
+                            <small class="text-muted">{{ log.registered_person.email }}</small>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if success_filter %}&success={{ success_filter }}{% endif %}">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if success_filter %}&success={{ success_filter }}{% endif %}">Previous</a>
+            </li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if success_filter %}&success={{ success_filter }}{% endif %}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if success_filter %}&success={{ success_filter }}{% endif %}">Last</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-route fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">No usage logs found</h4>
+        {% if success_filter %}
+            <p class="text-muted">Try clearing the filter to see all logs.</p>
+            <a href="{% url 'usage_logs' %}" class="btn btn-outline-primary">Clear Filters</a>
+        {% else %}
+            <p class="text-muted">Once people visit or use your invites, they will appear here.</p>
+            <a href="{% url 'create_invite' %}" class="btn btn-primary">Create an Invitation</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
