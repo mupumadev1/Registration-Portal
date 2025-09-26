@@ -204,17 +204,22 @@ def register_person(request):
             # Enforce that the email used matches the gated email (if present)
             if gated_email and form.cleaned_data['email'].lower().strip() != gated_email.lower().strip():
                 messages.error(request, 'Please use the same email you provided to access this form.')
-            # Check duplicates
-            elif RegisteredPerson.objects.filter(email=form.cleaned_data['email']).exists():
-                messages.error(request, 'A person with this email is already registered.')
-            elif RegisteredPerson.objects.filter(id_number=form.cleaned_data['id_number']).exists():
+            # Check duplicates (per-invite for email, global for ID number as safety)
+            elif RegisteredPerson.objects.filter(invite=invite, email=form.cleaned_data['email']).exists():
+                messages.error(request, 'You have already registered using this invitation link.')
+            elif RegisteredPerson.objects.filter(invite=invite,id_number=form.cleaned_data['id_number']).exists():
                 messages.error(request, 'A person with this ID number is already registered.')
             else:
                 # Create the registration
                 registration = form.save(commit=False)
                 registration.invite = invite
                 registration.registration_ip = get_client_ip(request)
-                registration.save()
+                try:
+                    registration.save()
+                except Exception:
+                    # In case of a race condition hitting the DB unique constraint
+                    messages.error(request, 'You have already registered using this invitation link.')
+                    return redirect('invite_entry_with_token', token=str(invite.token))
                 
                 # Mark invite as used and log successful registration
                 try:

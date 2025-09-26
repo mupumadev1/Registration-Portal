@@ -82,6 +82,15 @@ class CreateInviteForm(forms.Form):
         }),
         label='Created By'
     )
+    title = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Staff Workshop, Monthly Meeting'
+        }),
+        label='Title (meeting name)'
+    )
     days_valid = forms.IntegerField(
         min_value=1,
         max_value=365,

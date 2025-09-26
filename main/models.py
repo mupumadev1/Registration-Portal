@@ -38,14 +38,11 @@ class InviteLink(models.Model):
     created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-
     is_active = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
     # How many uses allowed in total (and per user as a simple limit)
-    max_uses = models.IntegerField(default=1, help_text="How many times each user can register with this link")
-    # Track how many times this invite has been used
+    max_uses = models.IntegerField(default=1, help_text="How many times the same user (identifier) can register with this link")
     current_uses = models.IntegerField(default=0)
-
     description = models.TextField(blank=True)
     title = models.CharField(max_length=200, default="Staff workshop")
     last_used_at = models.DateTimeField(null=True, blank=True)
@@ -97,14 +94,12 @@ class InviteLink(models.Model):
             title=title
         )
     def use_invite(self):
-        """Mark invite as used. Increment counter, set last_used_at, and deactivate if fully used."""
+        """Mark invite as used. Update counters and timestamps. Do NOT auto-deactivate based on per-user cap."""
         if not self.is_usable:
             return False
         self.current_uses += 1
         self.last_used_at = timezone.now()
-        if self.current_uses >= self.max_uses:
-            self.is_active = False
-        self.save(update_fields=['current_uses', 'last_used_at', 'is_active'])
+        self.save(update_fields=['current_uses', 'last_used_at'])
         return True
 
 
@@ -117,13 +112,13 @@ class UserInviteUsage(models.Model):
         ('phone', 'Phone Number'),
         ('ip', 'IP Address'),
     ])
-
     registered_person = models.ForeignKey('RegisteredPerson', on_delete=models.CASCADE)
     used_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     class Meta:
-        unique_together = ['invite', 'registered_person']  # Prevent duplicate entries
+        # Enforce one usage per identifier per invite (user can register only once for a given link)
+        unique_together = ['invite', 'identifier']
         indexes = [
             models.Index(fields=['invite', 'identifier']),
         ]
@@ -158,6 +153,10 @@ class RegisteredPerson(models.Model):
             ("can_verify_registrations", "Can verify registrations"),
             ("can_export_registrations", "Can export registration data"),
         ]
+        # A person (by email) can register only once for a specific invite
+        constraints = [
+            models.UniqueConstraint(fields=['invite', 'email'], name='unique_registration_per_invite_email'),
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
@@ -172,7 +171,6 @@ class RegisteredPerson(models.Model):
 
         # Create usage tracking entry when person registers
         if is_new and self.invite:
-            # Track by email (primary identifier)
             UserInviteUsage.objects.create(
                 invite=self.invite,
                 identifier=self.email,
