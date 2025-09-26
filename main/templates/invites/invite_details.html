@@ -204,25 +204,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(function() {
-        const toast = document.createElement('div');
-        toast.className = 'position-fixed top-0 end-0 p-3';
-        toast.style.zIndex = '1050';
-        toast.innerHTML = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check me-2"></i>Invite link copied to clipboard!
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
-    }).catch(function(err) {
-        console.error('Could not copy text: ', err);
-        alert('Failed to copy link. Please copy manually.');
-    });
-}
-</script>
-{% endblock %}
+{% block extra_js %}{% endblock %}

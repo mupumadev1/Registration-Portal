@@ -60,14 +60,33 @@
             font-weight: bold;
             color: #1976d2 !important;
         }
+        @media (max-width: 767.98px) {
+            .content-wrapper {
+                padding: 1rem;
+            }
+        }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
     <div class="container-fluid">
         <div class="row">
          {% if user.is_authenticated and user.staffprofile %}
-            <nav class="col-md-3 col-lg-2 sidebar">
+            <!-- Mobile top navbar with toggler (visible on small screens) -->
+            <div class="col-12 p-0 d-md-none">
+                <nav class="navbar navbar-light bg-white shadow-sm">
+                    <div class="container-fluid">
+                        <a class="navbar-brand" href="#"><i class="fas fa-paper-plane me-2"></i>InviteCentral</a>
+                        <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Desktop sidebar (hidden on small screens) -->
+            <nav class="d-none d-md-block col-md-3 col-lg-2 sidebar">
                 <div class="text-center mb-4">
                     <h4><i class="fas fa-paper-plane me-2"></i>InviteCentral</h4>
                     <small class="text-white">Welcome, {{ user.get_full_name|default:user.username }}</small>
@@ -98,7 +117,6 @@
                             <i class="fas fa-chart-line me-2"></i>Usage Logs
                         </a>
                     </li>
-
                     <li class="nav-item mt-3 pt-3 border-top">
                         <a class="nav-link" href="{% url 'logout' %}">
                             <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -106,6 +124,49 @@
                     </li>
                 </ul>
             </nav>
+
+            <!-- Offcanvas sidebar for mobile -->
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+                <div class="offcanvas-header" style="background-color: #0f5298; color: white;">
+                    <h5 class="offcanvas-title" id="mobileSidebarLabel"><i class="fas fa-paper-plane me-2"></i>InviteCentral</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body" style="background-color: #0f5298;">
+                    <div class="text-white mb-3">Welcome, {{ user.get_full_name|default:user.username }}</div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'create_invite' %}active{% endif %}" href="{% url 'create_invite' %}">
+                                <i class="fas fa-plus-circle me-2"></i>Create Invite
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'invite_list' %}active{% endif %}" href="{% url 'invite_list' %}">
+                                <i class="fas fa-list me-2"></i>My Invites
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'registrations_list' %}active{% endif %}" href="{% url 'registrations_list' %}">
+                                <i class="fas fa-users me-2"></i>Registrations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'usage_logs' %}active{% endif %}" href="{% url 'usage_logs' %}">
+                                <i class="fas fa-chart-line me-2"></i>Usage Logs
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3 pt-3 border-top">
+                            <a class="nav-link" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
          {% else %}
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
@@ -134,6 +195,65 @@
     {% endif %}
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Global copy helper with robust fallbacks for insecure contexts and older browsers
+    (function(){
+        function showCopyAlert(success){
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-0 end-0 p-3';
+            toast.style.zIndex = '1050';
+            toast.innerHTML = `
+                <div class="alert ${success ? 'alert-success' : 'alert-danger'} alert-dismissible fade show" role="alert">
+                    <i class="fas ${success ? 'fa-check' : 'fa-exclamation-triangle'} me-2"></i>${ success ? 'Invite link copied to clipboard!' : 'Failed to copy link. Please copy manually.' }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+        }
+
+        async function copyCore(text){
+            // Try modern Clipboard API when available and secure
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+            // Fallback: use a temporary textarea and execCommand('copy')
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            // Avoid scrolling to bottom
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-1000px';
+            textarea.style.left = '-1000px';
+            textarea.setAttribute('readonly', '');
+            document.body.appendChild(textarea);
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch (e) {
+                ok = false;
+            }
+            document.body.removeChild(textarea);
+            return ok;
+        }
+
+        window.copyToClipboard = async function(text){
+            try {
+                const ok = await copyCore(text);
+                if (ok) {
+                    showCopyAlert(true);
+                } else {
+                    showCopyAlert(false);
+                }
+            } catch (err) {
+                console.error('Copy error:', err);
+                showCopyAlert(false);
+            }
+        }
+    })();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

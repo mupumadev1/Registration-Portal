@@ -1,7 +1,56 @@
 {% extends 'invites/base.html' %}
 
 {% block title %}Dashboard - InviteCentral {% endblock %}
+{% block extra_css %}
 
+    <style>
+    .btn-gradient {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border: none;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 600;
+        color: #fff;
+        transition: background 0.3s ease;
+    }
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #1e40af, #1d4ed8);
+        color: #fff;
+    }
+    .stats-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        transition: transform 0.2s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+    .icon-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        font-size: 1.25rem;
+    }
+    .copy-btn {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+    .copy-btn:hover {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+    }
+    .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary text-opacity-75">
@@ -207,52 +256,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<style>
-    .btn-gradient {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        border: none;
-        border-radius: 12px;
-        padding: 10px 16px;
-        font-weight: 600;
-        color: #fff;
-        transition: background 0.3s ease;
-    }
-    .btn-gradient:hover {
-        background: linear-gradient(135deg, #1e40af, #1d4ed8);
-        color: #fff;
-    }
-    .stats-card {
-        border: none;
-        border-radius: 16px;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-        transition: transform 0.2s ease;
-    }
-    .stats-card:hover {
-        transform: translateY(-3px);
-    }
-    .icon-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        font-size: 1.25rem;
-    }
-    .copy-btn {
-        background: linear-gradient(135deg, #0ea5e9, #0284c7);
-        border-radius: 8px;
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        color: #fff;
-        transition: all 0.2s ease;
-    }
-    .copy-btn:hover {
-        background: linear-gradient(135deg, #0284c7, #0369a1);
-    }
-    .copy-btn.copied {
-        background: linear-gradient(135deg, #10b981, #059669) !important;
-    }
-</style>
-{% endblock %}
+{% block extra_js %}{% endblock %}
