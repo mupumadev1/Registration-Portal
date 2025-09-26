@@ -35,6 +35,6 @@ from django.shortcuts import redirect
 urlpatterns = [
     path('admin/', admin.site.urls),
  #   path('', root_redirect),  # Root route redirects appropriately
-    path('', include('main.urls')),
+    path('invites/', include('main.urls')),
 
 ]
